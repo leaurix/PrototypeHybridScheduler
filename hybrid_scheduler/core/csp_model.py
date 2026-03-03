@@ -1,4 +1,6 @@
 from ortools.sat.python import cp_model
+from __future__ import annotations
+from hybrid_scheduler.utils.dataset_loader import Dataset
 
 class CSPModel:
     def __init__(self, dataset: Dataset):
