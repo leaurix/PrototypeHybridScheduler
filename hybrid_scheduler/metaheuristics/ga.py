@@ -3,7 +3,7 @@ import copy
 
 
 class GeneticAlgorithm:
-    def __init__(self, dataset, validator, population_size=30, generations=50, mutation_rate=0.1):
+    def __init__(self, dataset, validator, population_size=10, generations=5, mutation_rate=0.1):
         self.dataset = dataset
         self.validator = validator
         self.population_size = population_size
@@ -11,9 +11,6 @@ class GeneticAlgorithm:
         self.mutation_rate = mutation_rate
 
     def create_random_schedule(self):
-        """
-        One student-course gets exactly one timeslot.
-        """
         schedule = {}
         timeslots = list(self.dataset.timeslots["timeslot"])
 
@@ -26,13 +23,9 @@ class GeneticAlgorithm:
 
     def fitness(self, schedule):
         violations = self.validator.validate(schedule)
-        # Lower score is better, so fitness is negative score
         return -violations["score"]
 
     def mutate(self, schedule):
-        """
-        Mutation that preserves one-timeslot-per-student-course.
-        """
         new_sch = copy.deepcopy(schedule)
         s = random.choice(list(self.dataset.students["student_id"]))
         c = random.choice(list(self.dataset.courses["course_id"]))
@@ -47,9 +40,6 @@ class GeneticAlgorithm:
         return new_sch
 
     def crossover(self, parent1, parent2):
-        """
-        Crossover by student-course block to preserve structure.
-        """
         child = {}
         timeslots = list(self.dataset.timeslots["timeslot"])
 
@@ -60,27 +50,36 @@ class GeneticAlgorithm:
                     child[(s, c, t)] = source[(s, c, t)]
         return child
 
-    def select_parent(self, population, tournament_size=3):
-        candidates = random.sample(population, min(tournament_size, len(population)))
-        return max(candidates, key=self.fitness)
+    def select_parent(self, scored_population, tournament_size=3):
+        candidates = random.sample(scored_population, min(tournament_size, len(scored_population)))
+        # each item is (fitness, schedule)
+        return max(candidates, key=lambda x: x[0])[1]
 
     def run(self):
+        print("GA: initializing population...")
         population = [self.create_random_schedule() for _ in range(self.population_size)]
 
-        for _ in range(self.generations):
+        for g in range(self.generations):
+            scored_population = [(self.fitness(sch), sch) for sch in population]
+            best_fitness = max(scored_population, key=lambda x: x[0])[0]
+            print(f"GA: generation {g + 1}/{self.generations}, best fitness = {best_fitness}")
+
             new_population = []
 
-            elite = max(population, key=self.fitness)
+            # elitism
+            elite = max(scored_population, key=lambda x: x[0])[1]
             new_population.append(copy.deepcopy(elite))
 
             while len(new_population) < self.population_size:
-                p1 = self.select_parent(population)
-                p2 = self.select_parent(population)
+                p1 = self.select_parent(scored_population)
+                p2 = self.select_parent(scored_population)
                 child = self.crossover(p1, p2)
                 child = self.mutate(child)
                 new_population.append(child)
 
             population = new_population
 
-        best = max(population, key=self.fitness)
+        scored_population = [(self.fitness(sch), sch) for sch in population]
+        best = max(scored_population, key=lambda x: x[0])[1]
+        print("GA: finished.")
         return best

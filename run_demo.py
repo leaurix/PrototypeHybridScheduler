@@ -64,8 +64,8 @@ def main(data_dir="dummy_dataset"):
     ga = GeneticAlgorithm(
         ds,
         validator,
-        population_size=20,
-        generations=20,
+        population_size=10,
+        generations=5,
         mutation_rate=0.10
     )
     ga_best = ga.run()
@@ -76,7 +76,7 @@ def main(data_dir="dummy_dataset"):
     print("8) Starting ALNS...")
     start_alns = time.time()
     ops = NeighborhoodOperators(ds)
-    alns = ALNS(ds, validator, operators=ops, iterations=100)
+    alns = ALNS(ds, validator, operators=ops, iterations=30)
     alns_best = alns.run(ga_best)
     alns_time = time.time() - start_alns
     alns_result = validator.validate(alns_best)
