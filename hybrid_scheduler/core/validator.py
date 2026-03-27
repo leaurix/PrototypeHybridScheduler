@@ -5,7 +5,6 @@ from hybrid_scheduler.utils.dataset_loader import Dataset
 
 class Validator:
     """
-    Thesis-aligned validator:
     - counts hard constraint violations
     - counts soft constraint violations
     - computes weighted score
