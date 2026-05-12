@@ -1,6 +1,5 @@
 """
 Hybrid Scheduler — Tkinter GUI
-Replaces the terminal-based run_demo.py with a full graphical interface.
 """
 
 import os
@@ -10,6 +9,14 @@ import threading
 import tkinter as tk
 from tkinter import ttk, filedialog, messagebox
 import pandas as pd
+
+# ── PyInstaller bundle path fix ──────────────────────────────────────────────
+if getattr(sys, 'frozen', False):
+    _BASE = sys._MEIPASS
+    if _BASE not in sys.path:
+        sys.path.insert(0, _BASE)
+else:
+    _BASE = os.path.dirname(os.path.abspath(__file__))
 
 # ── timeslot label mapping ──────────────────────────────────────────────────
 TIMESLOT_LABELS = {
@@ -97,7 +104,7 @@ class SchedulerApp(tk.Tk):
         self.minsize(900, 600)
         self.configure(bg=BG)
 
-        self._data_dir = tk.StringVar(value=os.path.join(os.path.dirname(__file__), "dummy_dataset"))
+        self._data_dir = tk.StringVar(value=os.path.join(_BASE, "dummy_dataset"))
         self._ga_pop    = tk.IntVar(value=10)
         self._ga_gen    = tk.IntVar(value=5)
         self._ga_mut    = tk.DoubleVar(value=0.10)
