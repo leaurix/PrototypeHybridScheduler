@@ -1,7 +1,0 @@
-course_id,instructor_id,prerequisite
-CS101,I1,
-CS102,I2,CS101
-CS103,I1,
-MATH101,I3,
-ENG101,I4,
-CS201,I2,CS102
