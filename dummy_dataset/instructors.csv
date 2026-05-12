@@ -1,0 +1,5 @@
+instructor_id,name,available_timeslots
+I1,Instructor 1,"['TSMon_AM', 'TSMon_PM', 'TSTue_AM', 'TSTue_PM', 'TSWed_AM', 'TSWed_PM']"
+I2,Instructor 2,"['TSTue_AM', 'TSTue_PM', 'TSWed_AM', 'TSWed_PM', 'TSThu_AM', 'TSThu_PM', 'TSFri_AM', 'TSFri_PM']"
+I3,Instructor 3,"['TSMon_AM', 'TSTue_AM', 'TSWed_AM', 'TSThu_AM', 'TSFri_AM']"
+I4,Instructor 4,"['TSMon_PM', 'TSTue_PM', 'TSWed_PM', 'TSThu_PM', 'TSFri_PM']"
