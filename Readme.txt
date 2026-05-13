@@ -1,13 +1,14 @@
-# 🧠 FGASP Hybrid Scheduler  
-### *Feasibility-Guided Adaptive Scheduling Pipeline*
+# 🧠 FGASP Hybrid Scheduler
 
 <p align="center">
+  <b>Feasibility-Guided Adaptive Scheduling Pipeline</b>
+</p>
 
-![Python](https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python)
-![Status](https://img.shields.io/badge/Status-Prototype-success?style=for-the-badge)
-![Platform](https://img.shields.io/badge/Platform-Windows-informational?style=for-the-badge)
-![License](https://img.shields.io/badge/License-Academic-lightgrey?style=for-the-badge)
-
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python">
+  <img src="https://img.shields.io/badge/Status-Prototype-success?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Platform-Windows-informational?style=for-the-badge">
+  <img src="https://img.shields.io/badge/License-Academic-lightgrey?style=for-the-badge">
 </p>
 
 ---
@@ -20,53 +21,67 @@ FGASP Hybrid Scheduler is an intelligent academic scheduling system that combine
 - **Adaptive Large Neighbourhood Search (ALNS)**
 - **Constraint Satisfaction Programming (CSP)**
 
-under a unified:
+under a unified scheduling framework called:
 
-# ⚙️ Feedback-Guided Adaptive Scheduling Pipeline (FGASP)
+### ⚙️ Feedback-Guided Adaptive Scheduling Pipeline (FGASP)
 
 The system automatically generates optimized university class schedules while minimizing:
 
-✅ Instructor conflicts  
-✅ Room conflicts  
-✅ Student overlap  
-✅ Capacity violations  
-✅ Scheduling inconsistencies  
+- Instructor conflicts
+- Room conflicts
+- Student overlap
+- Capacity violations
+- Scheduling inconsistencies
 
-It includes a **Tkinter GUI**, dataset support through CSV files, and formatted Excel export functionality.
+The project includes:
+
+- 🖥️ Tkinter GUI
+- 📊 Excel export support
+- 📂 CSV dataset integration
+- 🔍 Constraint validation
+- 🧬 Hybrid optimization engine
 
 ---
 
 # ✨ Features
 
 ## 🧬 Hybrid Optimization Engine
-Combines:
-- Genetic Algorithm (GA)
-- ALNS Metaheuristic
-- CSP Validation Layer
 
-for high-quality schedule generation.
+Combines:
+
+- Genetic Algorithm (GA)
+- ALNS Metaheuristic Optimization
+- CSP Constraint Validation
+
+to generate optimized academic schedules.
 
 ---
 
-## 🖥️ Graphical User Interface
-User-friendly Tkinter GUI with:
-- Configuration panel
-- Live scheduling logs
+## 🖥️ User-Friendly GUI
+
+Built with Tkinter and includes:
+
+- Configuration controls
 - Schedule visualization
-- Export controls
+- Real-time logs
+- Export functionality
 
 ---
 
 ## 📊 Excel Export
-Exports professionally formatted `.xlsx` files containing:
+
+Exports formatted `.xlsx` files containing:
+
 - Full Schedule
 - Weekly Timetable
 - Statistical Summary
 
 ---
 
-## 🔍 Conflict Detection
-Automatically validates:
+## 🔍 Constraint Validation
+
+Automatically checks:
+
 - Instructor availability
 - Room capacity
 - Student conflicts
@@ -75,46 +90,20 @@ Automatically validates:
 
 ---
 
-## 📂 Real Dataset Support
-Supports actual university scheduling data through CSV files.
-
----
-
 # 🏗️ System Architecture
 
 ```text
-                +------------------+
-                |   Input Dataset  |
-                +------------------+
-                          |
-                          v
-                +------------------+
-                |      CSP         |
-                | Constraint Check |
-                +------------------+
-                          |
-                          v
-                +------------------+
-                | Genetic Algorithm|
-                | Initial Solution |
-                +------------------+
-                          |
-                          v
-                +------------------+
-                |      ALNS        |
-                | Schedule Repair  |
-                +------------------+
-                          |
-                          v
-                +------------------+
-                |      FGASP       |
-                | Best Selection   |
-                +------------------+
-                          |
-                          v
-                +------------------+
-                | Final Schedule   |
-                +------------------+
+Input Dataset
+      ↓
+Constraint Satisfaction Programming (CSP)
+      ↓
+Genetic Algorithm (GA)
+      ↓
+Adaptive Large Neighbourhood Search (ALNS)
+      ↓
+FGASP Evaluation Layer
+      ↓
+Final Optimized Schedule
 ```
 
 ---
@@ -136,7 +125,7 @@ PrototypeHybridScheduler/
 │   └── timeslots.csv
 │
 ├── dummy_dataset/
-│   └── (sample CSV files)
+│   └── sample CSV files
 │
 └── hybrid_scheduler/
     ├── core/
@@ -188,20 +177,19 @@ python scheduler_gui.py
 
 # 🏗️ Build Executable (.EXE)
 
-To generate a standalone executable:
-
 ## Option A — Using `build.bat`
 
-Simply double-click:
+Double-click:
 
 ```bash
 build.bat
 ```
 
-The script will:
-- Install dependencies
-- Build the executable
-- Launch the application automatically
+The script automatically:
+
+- Installs required dependencies
+- Builds the executable
+- Launches the application
 
 ---
 
@@ -225,7 +213,7 @@ The scheduler requires **5 CSV files**.
 
 ---
 
-## 👨‍🎓 `students.csv`
+## 👨‍🎓 students.csv
 
 ```csv
 student_id
@@ -236,7 +224,7 @@ IT2101
 
 ---
 
-## 📚 `courses.csv`
+## 📚 courses.csv
 
 ```csv
 course_id,instructor_id,prerequisite
@@ -247,7 +235,7 @@ CS201,I019,CS111
 
 ---
 
-## 👨‍🏫 `instructors.csv`
+## 👨‍🏫 instructors.csv
 
 ```csv
 instructor_id,name,available_timeslots
@@ -256,7 +244,7 @@ I001,"DELA CRUZ, JUAN","['TSMon_0700']"
 
 ---
 
-## 🏢 `rooms.csv`
+## 🏢 rooms.csv
 
 ```csv
 room_id,capacity
@@ -266,7 +254,7 @@ LAB2,35
 
 ---
 
-## ⏰ `timeslots.csv`
+## ⏰ timeslots.csv
 
 ```csv
 timeslot,display_time
@@ -283,7 +271,7 @@ After scheduling, the exported Excel file contains:
 | Sheet | Description |
 |---|---|
 | Full Schedule | Complete generated schedule |
-| Weekly Timetable | Grid-based timetable view |
+| Weekly Timetable | Grid-based timetable |
 | Summary | Statistics and enrollment summary |
 
 ---
@@ -292,17 +280,19 @@ After scheduling, the exported Excel file contains:
 
 | Setting | Description |
 |---|---|
-| GA Population Size | Number of schedule candidates |
+| GA Population Size | Number of candidate schedules |
 | GA Generations | Evolution cycles |
-| Mutation Rate | Random modification probability |
-| ALNS Iterations | Optimization refinement count |
+| Mutation Rate | Random mutation probability |
+| ALNS Iterations | Refinement iterations |
 
 ---
 
 # 🧠 Scheduling Workflow
 
 ## 1️⃣ Genetic Algorithm (GA)
-Creates an initial population of schedules and evolves them through:
+
+Creates an initial population of schedules using:
+
 - Selection
 - Crossover
 - Mutation
@@ -310,7 +300,9 @@ Creates an initial population of schedules and evolves them through:
 ---
 
 ## 2️⃣ ALNS Optimization
-Refines schedules using:
+
+Improves schedules using:
+
 - Destroy operators
 - Repair operators
 - Adaptive heuristics
@@ -318,19 +310,21 @@ Refines schedules using:
 ---
 
 ## 3️⃣ FGASP Evaluation
-Evaluates all generated schedules and selects the optimal result based on weighted constraint scoring.
+
+Selects the best schedule using weighted constraint scoring.
 
 ---
 
 # 🔧 Troubleshooting
 
-## ❌ `python is not recognized`
+## ❌ python is not recognized
 
 Install Python from:
 
-👉 https://www.python.org/downloads/
+https://www.python.org/downloads/
 
 Make sure:
+
 ```text
 ✔ Add Python to PATH
 ```
@@ -339,7 +333,7 @@ is checked during installation.
 
 ---
 
-## ❌ `No module named openpyxl`
+## ❌ No module named 'openpyxl'
 
 ```bash
 pip install openpyxl
@@ -347,7 +341,7 @@ pip install openpyxl
 
 ---
 
-## ❌ `DLL load failed`
+## ❌ DLL load failed
 
 ```bash
 pip install ortools
@@ -357,10 +351,11 @@ pip install ortools
 
 ## ❌ Empty Schedule Output
 
-Verify:
+Verify that:
+
 - All 5 CSV files exist
 - CSV formatting is correct
-- Dataset path is properly configured
+- Dataset path is configured properly
 
 ---
 
@@ -368,13 +363,12 @@ Verify:
 
 You can improve the repository further by adding:
 
-- `screenshots/` folder
 - GUI screenshots
 - Demo GIFs
 - Architecture diagrams
-- Sample exported Excel outputs
+- Sample outputs
 
-Example:
+Example structure:
 
 ```bash
 README.md
@@ -407,7 +401,7 @@ This project was developed for:
 
 # 👨‍💻 Developers
 
-Developed as part of a university research project on hybrid optimization systems and automated academic scheduling.
+Developed as part of a university research project focused on hybrid optimization systems and automated academic scheduling.
 
 ---
 
