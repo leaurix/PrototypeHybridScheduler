@@ -401,7 +401,7 @@ This project was developed for:
 
 # 👨‍💻 Developers
 
-Developed as part of a university research project focused on hybrid optimization systems and automated academic scheduling.
+Louis Yvan Alcayde
 
 ---
 
