@@ -113,17 +113,24 @@ Final Optimized Schedule
 ```bash
 PrototypeHybridScheduler/
 │
+├── convert_data.bat
+├── convert_data.py
 ├── scheduler_gui.py
 ├── scheduler_gui.spec
 ├── build.bat
 │
+├── input_excel/
+|   ├── 1.xlsx
+|   ├── 2.xlsx
+|   └── 3.xlsx
+|
 ├── real_dataset/
 │   ├── students.csv
 │   ├── courses.csv
 │   ├── instructors.csv
 │   ├── rooms.csv
 │   └── timeslots.csv
-│
+|
 ├── dummy_dataset/
 │   └── sample CSV files
 │
