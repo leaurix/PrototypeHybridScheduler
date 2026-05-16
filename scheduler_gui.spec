@@ -1,5 +1,6 @@
 # scheduler_gui.spec
 from PyInstaller.utils.hooks import collect_submodules, collect_data_files, collect_dynamic_libs
+import os
 
 block_cipher = None
 
@@ -7,13 +8,18 @@ ortools_hidden   = collect_submodules('ortools')
 ortools_datas    = collect_data_files('ortools')
 ortools_binaries = collect_dynamic_libs('ortools')
 
+# only bundle real_dataset if it exists
+extra_datas = []
+if os.path.isdir('real_dataset'):
+    extra_datas.append(('real_dataset', 'real_dataset'))
+if os.path.isdir('dummy_dataset'):
+    extra_datas.append(('dummy_dataset', 'dummy_dataset'))
+
 a = Analysis(
     ['scheduler_gui.py'],
     pathex=['.'],
     binaries=ortools_binaries,
-    datas=[
-        ('dummy_dataset', 'dummy_dataset'),
-        ('real_dataset',  'real_dataset'),
+    datas=extra_datas + [
         ('hybrid_scheduler', 'hybrid_scheduler'),
     ] + ortools_datas,
     hiddenimports=(
