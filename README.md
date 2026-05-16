@@ -130,7 +130,7 @@ PrototypeHybridScheduler/
 │   ├── instructors.csv
 │   ├── rooms.csv
 │   └── timeslots.csv
-|
+│
 ├── dummy_dataset/
 │   └── sample CSV files
 │
