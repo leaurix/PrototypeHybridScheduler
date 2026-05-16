@@ -120,10 +120,10 @@ PrototypeHybridScheduler/
 ├── build.bat
 │
 ├── input_excel/
-|   ├── 1.xlsx
-|   ├── 2.xlsx
-|   └── 3.xlsx
-|
+│   ├── 1.xlsx
+│   ├── 2.xlsx
+│   └── 3.xlsx
+│
 ├── real_dataset/
 │   ├── students.csv
 │   ├── courses.csv
