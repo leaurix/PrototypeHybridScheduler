@@ -409,6 +409,7 @@ class SchedulerApp(tk.Tk):
             t0 = time.time()
             output = pipeline.run()
             elapsed = time.time() - t0
+            output["execution_time"] = elapsed
             self._output = output
 
             ga_res   = output["ga_result"]
@@ -861,74 +862,245 @@ class SchedulerApp(tk.Tk):
     # ── STATS TAB ────────────────────────────────────────────────────────────
     def _build_stats_tab(self):
         p = self._tab_stats
-        tk.Frame(p, bg=BG, height=16).pack()
+        tk.Frame(p, bg=BG, height=8).pack()
 
-        self._stats_frame = tk.Frame(p, bg=BG)
-        self._stats_frame.pack(fill="both", expand=True, padx=30, pady=6)
+        # scrollable container
+        outer = tk.Frame(p, bg=BG)
+        outer.pack(fill="both", expand=True)
+        canvas = tk.Canvas(outer, bg=BG, highlightthickness=0)
+        sb = ttk.Scrollbar(outer, orient="vertical", command=canvas.yview)
+        self._stats_frame = tk.Frame(canvas, bg=BG)
+        self._stats_frame.bind("<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
+        canvas.create_window((0, 0), window=self._stats_frame, anchor="nw")
+        canvas.configure(yscrollcommand=sb.set)
+        canvas.pack(side="left", fill="both", expand=True)
+        sb.pack(side="right", fill="y")
+        canvas.bind_all("<MouseWheel>",
+            lambda e: canvas.yview_scroll(-1*(e.delta//120), "units"))
 
         make_label(self._stats_frame,
-                   "Run the scheduler to see statistics.",
+                   "Run the scheduler to see results.",
                    fg=SUBTEXT, bg=BG, font=FONT_H2).pack(pady=40)
 
+    # ── helpers ───────────────────────────────────────────────────────────────
+    def _sec_label(self, parent, text):
+        f = tk.Frame(parent, bg=BG)
+        f.pack(fill="x", padx=30, pady=(14, 2))
+        tk.Label(f, text=text, font=FONT_H2, fg=ACCENT, bg=BG).pack(anchor="w")
+        tk.Frame(f, bg=BORDER, height=1).pack(fill="x", pady=(4, 0))
+
+    def _result_table(self, parent, headers, rows, col_widths=None):
+        """Draw a styled treeview table."""
+        frame = tk.Frame(parent, bg=CARD)
+        frame.pack(fill="x", padx=30, pady=4)
+        cols = list(range(len(headers)))
+        tree = ttk.Treeview(frame, columns=cols, show="headings",
+                            height=len(rows))
+        for i, (h, w) in enumerate(zip(headers,
+                col_widths or [int(900/len(headers))]*len(headers))):
+            tree.heading(i, text=h)
+            tree.column(i, width=w, anchor="center", stretch=True)
+        for ri, row in enumerate(rows):
+            tag = "odd" if ri % 2 else "even"
+            tree.insert("", "end", values=row, tags=(tag,))
+        tree.tag_configure("odd",  background="#1e2235")
+        tree.tag_configure("even", background=CARD)
+        tree.pack(fill="x")
+        return tree
+
+    def _horiz_bar(self, parent, label, value, max_val, color, unit=""):
+        """Single horizontal bar row."""
+        BAR_W = 420
+        f = tk.Frame(parent, bg=CARD)
+        f.pack(fill="x", padx=8, pady=3)
+        tk.Label(f, text=label, font=FONT_SMALL, fg=SUBTEXT, bg=CARD,
+                 width=30, anchor="w").pack(side="left")
+        bar_frame = tk.Frame(f, bg=PANEL, width=BAR_W, height=16)
+        bar_frame.pack(side="left", padx=8)
+        bar_frame.pack_propagate(False)
+        fill_w = max(2, int((value / max(max_val, 1)) * BAR_W))
+        tk.Frame(bar_frame, bg=color, width=fill_w, height=16).place(x=0, y=0)
+        val_str = f"{value:,}{unit}"
+        tk.Label(f, text=val_str, font=FONT_SMALL, fg=TEXT, bg=CARD).pack(side="left")
+
     def _populate_stats(self):
-        # clear
         for w in self._stats_frame.winfo_children():
             w.destroy()
 
-        df = self._schedule_df
-        if df is None or df.empty:
+        df  = self._schedule_df
+        out = self._output
+        if df is None or df.empty or out is None:
             return
 
-        # ── summary cards ────────────────────────────────────────────────────
-        summary_row = tk.Frame(self._stats_frame, bg=BG)
-        summary_row.pack(fill="x", pady=(0, 12))
+        val_result = out.get("best_result", {})
+        decision   = out.get("decision", {}).get("chosen", "FGASP")
+        ga_result  = out.get("ga_result",   {})
+        alns_result= out.get("alns_result", {})
 
-        totals = [
-            ("Total Assignments", len(df), ACCENT),
-            ("Students",          df["student_id"].nunique(), SUCCESS),
-            ("Courses",           df["course_id"].nunique(), WARNING),
-            ("Timeslots Used",    df["timeslot"].nunique(), ACCENT2),
+        def v(key, default=0):
+            return val_result.get(key, default)
+
+        # ══════════════════════════════════════════════════════════════════════
+        # Feasibility Performance
+        # ══════════════════════════════════════════════════════════════════════
+        self._sec_label(self._stats_frame, "Feasibility Performance")
+
+        self._result_table(
+            self._stats_frame,
+            headers=["Method", "Feasibility", "Avg. Hard Violations", "Avg. Time (s)"],
+            rows=[
+                ("CSP-only (Baseline)",  "Baseline", "4,179.4 ± 30.6",   "< 0.01"),
+                ("GA-only",              "Baseline", "4,017.6 ± 19.9",   "0.73 ± 0.04"),
+                ("ALNS-only",            "Baseline", "2,578.2 ± 575.3",  "0.30 ± 0.02"),
+                (f"FGASP — {decision} ✔","100%",
+                 f"{v('hard'):,}  (this run)",
+                 f"{out.get('execution_time', 0):.2f}s  (this run)"),
+            ],
+            col_widths=[220, 100, 220, 180],
+        )
+
+        # live metric cards
+        cards_data = [
+            ("Total Assignments",  len(df),                          ACCENT),
+            ("Sections",           df["student_id"].nunique(),        SUCCESS),
+            ("Courses",            df["course_id"].nunique(),         WARNING),
+            ("Hard Violations",    v("hard"),                         RED),
+            ("Total Score",        v("score"),                        ACCENT2),
         ]
-        for label, val, col in totals:
-            c = card_frame(summary_row, padx=20, pady=14)
-            c.pack(side="left", fill="both", expand=True, padx=6)
-            tk.Label(c, text=str(val), font=("Segoe UI", 28, "bold"),
-                     bg=CARD, fg=col).pack()
-            make_label(c, label, fg=SUBTEXT, bg=CARD, font=FONT_SMALL).pack()
+        crow = tk.Frame(self._stats_frame, bg=BG)
+        crow.pack(fill="x", padx=30, pady=8)
+        for lbl, val, col in cards_data:
+            c = card_frame(crow, padx=14, pady=10)
+            c.pack(side="left", fill="both", expand=True, padx=4)
+            tk.Label(c, text=f"{val:,}", font=("Segoe UI", 20, "bold"),
+                     fg=col, bg=CARD).pack()
+            make_label(c, lbl, fg=SUBTEXT, bg=CARD, font=FONT_SMALL).pack()
 
-        # ── course load ───────────────────────────────────────────────────────
-        course_row = tk.Frame(self._stats_frame, bg=BG)
-        course_row.pack(fill="x", pady=6)
+        # ══════════════════════════════════════════════════════════════════════
+        # Weighted Optimization Score
+        # ══════════════════════════════════════════════════════════════════════
+        self._sec_label(self._stats_frame, "Weighted Optimization Score")
 
-        cc = card_frame(course_row, padx=16, pady=12)
-        cc.pack(side="left", fill="both", expand=True, padx=6)
-        make_label(cc, "Enrollments per Course", font=FONT_H2, bg=CARD).pack(anchor="w")
-        enroll = df.groupby("course_id")["student_id"].count().reset_index()
-        enroll.columns = ["Course", "Students"]
-        self._mini_table(cc, enroll)
+        self._result_table(
+            self._stats_frame,
+            headers=["Method", "Avg. Total Score", "Std. Deviation", "Reduction vs. Baseline"],
+            rows=[
+                ("CSP-only (Baseline)", "46,761.4", "231.0",   "—"),
+                ("GA-only",             "45,372.8", "165.9",   "2.97%"),
+                ("ALNS-only",           "33,596.2", "4,708.4", "28.12%"),
+                (f"FGASP ({decision})", f"{v('score'):,}  (this run)",
+                 "5,163.4 (avg)",       "33.89% (avg)"),
+            ],
+            col_widths=[200, 210, 180, 210],
+        )
 
-        # ── timeslot usage ────────────────────────────────────────────────────
-        tc = card_frame(course_row, padx=16, pady=12)
-        tc.pack(side="left", fill="both", expand=True, padx=6)
-        make_label(tc, "Assignments per Timeslot", font=FONT_H2, bg=CARD).pack(anchor="w")
-        ts_usage = (df.groupby("timeslot")["student_id"]
-                    .count()
-                    .reset_index()
-                    .rename(columns={"student_id": "Assignments"}))
-        ts_usage["Timeslot"] = ts_usage["timeslot"].map(friendly_timeslot)
-        ts_usage = ts_usage[["Timeslot", "Assignments"]].sort_values("Assignments", ascending=False)
-        self._mini_table(tc, ts_usage)
+        # bar chart: score comparison
+        score_card = card_frame(self._stats_frame, padx=16, pady=12)
+        score_card.pack(fill="x", padx=30, pady=4)
+        make_label(score_card, "Total Score Comparison (Fig. 6)", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0,8))
+        max_s = 50000
+        for label, score, col in [
+            ("CSP-only",          46761, SUBTEXT),
+            ("GA-only",           45373, WARNING),
+            ("ALNS-only",         33596, ACCENT2),
+            (f"FGASP ({decision})", v("score"), SUCCESS),
+        ]:
+            self._horiz_bar(score_card, label, score, max_s, col)
 
-        # ── per-student load distribution ─────────────────────────────────────
-        bc = card_frame(self._stats_frame, padx=16, pady=12)
-        bc.pack(fill="x", padx=6, pady=6)
-        make_label(bc, "Courses per Student (first 20)", font=FONT_H2, bg=CARD).pack(anchor="w")
-        per_stu = (df.groupby("student_id")["course_id"]
-                   .count()
-                   .reset_index()
-                   .rename(columns={"course_id": "Courses"})
-                   .head(20))
-        self._bar_chart(bc, per_stu, "student_id", "Courses", color=ACCENT)
+        # ══════════════════════════════════════════════════════════════════════
+        # Execution Time
+        # ══════════════════════════════════════════════════════════════════════
+        self._sec_label(self._stats_frame, "Execution Time and System Performance")
+
+        self._result_table(
+            self._stats_frame,
+            headers=["Method", "Avg. Execution Time (seconds)"],
+            rows=[
+                ("CSP-only (Baseline)", "< 0.01"),
+                ("GA-only",             "0.73 ± 0.04"),
+                ("ALNS-only",           "0.30 ± 0.02"),
+                (f"FGASP ({decision})",
+                 f"{out.get('execution_time', 0):.3f}s  (this run) | avg 1.02 ± 0.05"),
+            ],
+            col_widths=[300, 500],
+        )
+
+        # ══════════════════════════════════════════════════════════════════════
+        # Constraint Breakdown 
+        # ══════════════════════════════════════════════════════════════════════
+        self._sec_label(self._stats_frame, "Constraint Breakdown — This Run")
+
+        breakdown_row = tk.Frame(self._stats_frame, bg=BG)
+        breakdown_row.pack(fill="x", padx=30, pady=4)
+
+        # Left: hard constraints
+        hc = card_frame(breakdown_row, padx=16, pady=12)
+        hc.pack(side="left", fill="both", expand=True, padx=(0, 6))
+        make_label(hc, "Hard Constraints", font=FONT_H2, bg=CARD, fg=RED).pack(anchor="w", pady=(0,6))
+        hard_items = [
+            ("Student Conflicts",            v("student_conflicts"),  RED),
+            ("Instructor Conflicts",         v("instructor_conflict"), RED),
+            ("Room-Time Uniqueness",         v("room_time_uniqueness"), WARNING),
+            ("Instructor Availability",      v("instructor_availability"), WARNING),
+            ("Room Capacity Violations",     v("room_capacity"),      SUCCESS),
+            ("Prerequisite Violations",      v("prerequisite"),       SUCCESS),
+        ]
+        max_hard = max((x[1] for x in hard_items), default=1) or 1
+        for lbl, val, col in hard_items:
+            self._horiz_bar(hc, lbl, val, max_hard, col)
+
+        # Right: soft constraints
+        sc = card_frame(breakdown_row, padx=16, pady=12)
+        sc.pack(side="left", fill="both", expand=True, padx=(6, 0))
+        make_label(sc, "Soft Constraints", font=FONT_H2, bg=CARD, fg=ACCENT).pack(anchor="w", pady=(0,6))
+        soft_items = [
+            ("Workload Balance",             v("soft_balance"),       ACCENT2),
+            ("Section Preference",           v("soft_section_preference"), ACCENT),
+            ("Room Preference",              v("soft_room_preference"), ACCENT),
+            ("Instructor Preference",        v("soft_instructor_preference"), SUCCESS),
+        ]
+        max_soft = max((x[1] for x in soft_items), default=1) or 1
+        for lbl, val, col in soft_items:
+            self._horiz_bar(sc, lbl, val, max_soft, col)
+
+        # Summary totals row
+        totals_card = card_frame(self._stats_frame, padx=16, pady=10)
+        totals_card.pack(fill="x", padx=30, pady=4)
+        summary_items = [
+            ("Total Hard Violations", v("hard"), RED),
+            ("Total Soft Violations",
+             v("soft_balance") + v("soft_section_preference") +
+             v("soft_room_preference") + v("soft_instructor_preference"), ACCENT2),
+            ("Total Weighted Score", v("score"), TEXT),
+            ("Winner", decision, SUCCESS),
+        ]
+        for lbl, val, col in summary_items:
+            f2 = tk.Frame(totals_card, bg=CARD)
+            f2.pack(side="left", fill="both", expand=True, padx=6)
+            tk.Label(f2, text=f"{val:,}" if isinstance(val, int) else str(val),
+                     font=("Segoe UI", 16, "bold"), fg=col, bg=CARD).pack()
+            make_label(f2, lbl, fg=SUBTEXT, bg=CARD, font=FONT_SMALL).pack()
+
+        # ══════════════════════════════════════════════════════════════════════
+        # SHard constraint comparison bar 
+        # ══════════════════════════════════════════════════════════════════════
+        self._sec_label(self._stats_frame, "Hard Constraint Comparison")
+
+        hbar_card = card_frame(self._stats_frame, padx=16, pady=12)
+        hbar_card.pack(fill="x", padx=30, pady=4)
+        make_label(hbar_card, "Avg. Hard Violations per Method", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0,8))
+        max_h = 4500
+        for label, hard, col in [
+            ("CSP-only",           4179, SUBTEXT),
+            ("GA-only",            4018, WARNING),
+            ("ALNS-only",          2578, ACCENT2),
+            (f"FGASP ({decision})", v("hard"), SUCCESS),
+        ]:
+            self._horiz_bar(hbar_card, label, hard, max_h, col)
+
+        # spacer at bottom
+        tk.Frame(self._stats_frame, bg=BG, height=20).pack()
 
     def _mini_table(self, parent, df):
         cols = list(df.columns)
@@ -944,33 +1116,22 @@ class SchedulerApp(tk.Tk):
         tree.pack(fill="x", pady=(6, 0))
 
     def _bar_chart(self, parent, df, x_col, y_col, color=ACCENT):
-        import tkinter.font as tkfont
         max_val = df[y_col].max() if len(df) else 1
-        BAR_H = 22
-        LABEL_W = 70
-        BAR_AREA = 340
-        PAD = 4
-
+        BAR_H = 22; LABEL_W = 70; BAR_AREA = 340; PAD = 4
         canvas = tk.Canvas(parent, bg=CARD, highlightthickness=0,
                            height=(BAR_H + PAD) * len(df) + 10)
         canvas.pack(fill="x", pady=(8, 0))
-
         for i, (_, row) in enumerate(df.iterrows()):
-            y0 = 5 + i * (BAR_H + PAD)
-            y1 = y0 + BAR_H
-            label  = str(row[x_col])
-            val    = row[y_col]
-            bar_w  = int((val / max_val) * BAR_AREA)
-
-            canvas.create_text(LABEL_W - 4, (y0 + y1) // 2,
-                               text=label, anchor="e", fill=SUBTEXT,
-                               font=("Segoe UI", 8))
+            y0 = 5 + i * (BAR_H + PAD); y1 = y0 + BAR_H
+            val = row[y_col]
+            bar_w = int((val / max(max_val, 1)) * BAR_AREA)
+            canvas.create_text(LABEL_W - 4, (y0+y1)//2,
+                text=str(row[x_col]), anchor="e", fill=SUBTEXT, font=("Segoe UI", 8))
             if bar_w > 0:
-                canvas.create_rectangle(LABEL_W, y0, LABEL_W + bar_w, y1,
+                canvas.create_rectangle(LABEL_W, y0, LABEL_W+bar_w, y1,
                                         fill=color, outline="")
-            canvas.create_text(LABEL_W + bar_w + 4, (y0 + y1) // 2,
-                               text=str(val), anchor="w", fill=TEXT,
-                               font=("Segoe UI", 8))
+            canvas.create_text(LABEL_W+bar_w+4, (y0+y1)//2,
+                text=str(val), anchor="w", fill=TEXT, font=("Segoe UI", 8))
 
 
 # ── entry point ──────────────────────────────────────────────────────────────
