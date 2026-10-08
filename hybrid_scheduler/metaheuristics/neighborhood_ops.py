@@ -21,13 +21,14 @@ class NeighborhoodOperators:
             slots = row.available_timeslots
             if isinstance(slots, str):
                 try: slots = ast.literal_eval(slots)
-                except: slots = []
+                except (ValueError, SyntaxError): slots = []
             ia[row.instructor_id] = set(slots)
 
+        # keep timeslot order (not set order) so seeded runs are reproducible
         self._course_valid_ts = {}
         for c in self._courses:
-            inst  = ci.get(c)
-            valid = list(ia.get(inst, set()) & set(self._timeslots))
+            avail = ia.get(ci.get(c), set())
+            valid = [t for t in self._timeslots if t in avail]
             self._course_valid_ts[c] = valid if valid else self._timeslots
 
     # ── compact helpers ──────────────────────────────────────────────────────

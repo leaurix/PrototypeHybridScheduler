@@ -1,14 +1,14 @@
 import random
-import copy
-from concurrent.futures import ThreadPoolExecutor
 
 
 class GeneticAlgorithm:
     """
     Optimised GA:
     - Compact schedule representation {(s,c): t}  (~70x smaller than sparse matrix)
-    - Parallel fitness evaluation across population using threads
     - Converts to expanded form only for validator hand-off
+
+    Fitness is evaluated serially: the validator is pure Python, so a thread
+    pool gives no speed-up under the GIL and only adds overhead.
     """
 
     def __init__(self, dataset, validator, population_size=10, generations=5,
@@ -24,9 +24,6 @@ class GeneticAlgorithm:
         self._students  = list(dataset.students["student_id"])
         self._courses   = list(dataset.courses["course_id"])
         self._timeslots = list(dataset.timeslots["timeslot"])
-
-        # worker pool — reused across generations
-        self._pool = ThreadPoolExecutor(max_workers=4)
 
     # ── compact schedule helpers ─────────────────────────────────────────────
     def _create_compact(self):
@@ -45,9 +42,8 @@ class GeneticAlgorithm:
         return -self.validator.validate(self._expand(compact))["score"]
 
     def _eval_population(self, population):
-        """Evaluate entire population in parallel."""
-        fits = list(self._pool.map(self._fitness, population))
-        return list(zip(fits, population))
+        """Evaluate entire population."""
+        return [(self._fitness(p), p) for p in population]
 
     def _mutate(self, compact):
         new = compact.copy()
@@ -74,10 +70,9 @@ class GeneticAlgorithm:
 
         for g in range(self.generations):
             scored = self._eval_population(population)
-            best_f = max(scored, key=lambda x: x[0])[0]
+            best_f, elite = max(scored, key=lambda x: x[0])
             self.log(f"      gen {g+1}/{self.generations}  fitness={best_f}\n\n")
 
-            elite   = max(scored, key=lambda x: x[0])[1]
             new_pop = [elite.copy()]
 
             while len(new_pop) < self.population_size:

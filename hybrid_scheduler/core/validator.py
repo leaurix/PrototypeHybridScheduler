@@ -120,10 +120,13 @@ class Validator:
                     v["prerequisite"] += 1
 
         # HARD 6: Instructor availability
+        # An empty or missing availability list means "no restriction"
+        # (matches convert_data.py and NeighborhoodOperators).
         for (c, t), count in ct_students.items():
             if count > 0:
                 inst = self._course_instructor.get(c)
-                if inst and t not in self._inst_available.get(inst, set()):
+                avail = self._inst_available.get(inst) if inst else None
+                if avail and t not in avail:
                     v["instructor_availability"] += 1
 
         # SOFT 1: Balance

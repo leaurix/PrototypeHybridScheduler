@@ -169,7 +169,7 @@ cd PrototypeHybridScheduler
 ## 2️⃣ Install Dependencies
 
 ```bash
-pip install pandas ortools openpyxl pyinstaller
+pip install -r requirements.txt
 ```
 
 ---
@@ -291,6 +291,7 @@ After scheduling, the exported Excel file contains:
 | GA Generations | Evolution cycles |
 | Mutation Rate | Random mutation probability |
 | ALNS Iterations | Refinement iterations |
+| Random Seed | Blank = random; a number makes runs repeatable |
 
 ---
 

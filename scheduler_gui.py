@@ -3,6 +3,7 @@ Hybrid Scheduler — Tkinter GUI
 """
 
 import os
+import re
 import sys
 import time
 import threading
@@ -18,95 +19,42 @@ if getattr(sys, 'frozen', False):
 else:
     _BASE = os.path.dirname(os.path.abspath(__file__))
 
-# ── timeslot label mapping ──────────────────────────────────────────────────
-TIMESLOT_LABELS = {
-    "TSMon_0600": "Monday  06:00 – 07:00",
-    "TSMon_0700": "Monday  07:00 – 08:00",
-    "TSMon_0800": "Monday  08:00 – 09:00",
-    "TSMon_0900": "Monday  09:00 – 10:00",
-    "TSMon_1000": "Monday  10:00 – 11:00",
-    "TSMon_1100": "Monday  11:00 – 12:00",
-    "TSMon_1200": "Monday  12:00 – 13:00",
-    "TSMon_1300": "Monday  13:00 – 14:00",
-    "TSMon_1400": "Monday  14:00 – 15:00",
-    "TSMon_1500": "Monday  15:00 – 16:00",
-    "TSMon_1600": "Monday  16:00 – 17:00",
-    "TSMon_1700": "Monday  17:00 – 18:00",
-    "TSTue_0600": "Tuesday  06:00 – 07:00",
-    "TSTue_0700": "Tuesday  07:00 – 08:00",
-    "TSTue_0800": "Tuesday  08:00 – 09:00",
-    "TSTue_0900": "Tuesday  09:00 – 10:00",
-    "TSTue_1000": "Tuesday  10:00 – 11:00",
-    "TSTue_1100": "Tuesday  11:00 – 12:00",
-    "TSTue_1200": "Tuesday  12:00 – 13:00",
-    "TSTue_1300": "Tuesday  13:00 – 14:00",
-    "TSTue_1400": "Tuesday  14:00 – 15:00",
-    "TSTue_1500": "Tuesday  15:00 – 16:00",
-    "TSTue_1600": "Tuesday  16:00 – 17:00",
-    "TSTue_1700": "Tuesday  17:00 – 18:00",
-    "TSWed_0600": "Wednesday  06:00 – 07:00",
-    "TSWed_0700": "Wednesday  07:00 – 08:00",
-    "TSWed_0800": "Wednesday  08:00 – 09:00",
-    "TSWed_0900": "Wednesday  09:00 – 10:00",
-    "TSWed_1000": "Wednesday  10:00 – 11:00",
-    "TSWed_1100": "Wednesday  11:00 – 12:00",
-    "TSWed_1200": "Wednesday  12:00 – 13:00",
-    "TSWed_1300": "Wednesday  13:00 – 14:00",
-    "TSWed_1400": "Wednesday  14:00 – 15:00",
-    "TSWed_1500": "Wednesday  15:00 – 16:00",
-    "TSWed_1600": "Wednesday  16:00 – 17:00",
-    "TSWed_1700": "Wednesday  17:00 – 18:00",
-    "TSThu_0600": "Thursday  06:00 – 07:00",
-    "TSThu_0700": "Thursday  07:00 – 08:00",
-    "TSThu_0800": "Thursday  08:00 – 09:00",
-    "TSThu_0900": "Thursday  09:00 – 10:00",
-    "TSThu_1000": "Thursday  10:00 – 11:00",
-    "TSThu_1100": "Thursday  11:00 – 12:00",
-    "TSThu_1200": "Thursday  12:00 – 13:00",
-    "TSThu_1300": "Thursday  13:00 – 14:00",
-    "TSThu_1400": "Thursday  14:00 – 15:00",
-    "TSThu_1500": "Thursday  15:00 – 16:00",
-    "TSThu_1600": "Thursday  16:00 – 17:00",
-    "TSThu_1700": "Thursday  17:00 – 18:00",
-    "TSFri_0600": "Friday  06:00 – 07:00",
-    "TSFri_0700": "Friday  07:00 – 08:00",
-    "TSFri_0800": "Friday  08:00 – 09:00",
-    "TSFri_0900": "Friday  09:00 – 10:00",
-    "TSFri_1000": "Friday  10:00 – 11:00",
-    "TSFri_1100": "Friday  11:00 – 12:00",
-    "TSFri_1200": "Friday  12:00 – 13:00",
-    "TSFri_1300": "Friday  13:00 – 14:00",
-    "TSFri_1400": "Friday  14:00 – 15:00",
-    "TSFri_1500": "Friday  15:00 – 16:00",
-    "TSFri_1600": "Friday  16:00 – 17:00",
-    "TSFri_1700": "Friday  17:00 – 18:00",
-    "TSSat_0600": "Saturday  06:00 – 07:00",
-    "TSSat_0700": "Saturday  07:00 – 08:00",
-    "TSSat_0800": "Saturday  08:00 – 09:00",
-    "TSSat_0900": "Saturday  09:00 – 10:00",
-    "TSSat_1000": "Saturday  10:00 – 11:00",
-    "TSSat_1100": "Saturday  11:00 – 12:00",
-    "TSSat_1200": "Saturday  12:00 – 13:00",
-    "TSSat_1300": "Saturday  13:00 – 14:00",
-    "TSSat_1400": "Saturday  14:00 – 15:00",
-    "TSSat_1500": "Saturday  15:00 – 16:00",
-    "TSSat_1600": "Saturday  16:00 – 17:00",
-    "TSSat_1700": "Saturday  17:00 – 18:00",
-    # legacy dummy-dataset codes kept for backward compatibility
-    "TSMon_AM":  "Monday  07:00 – 08:00",
-    "TSMon_PM":  "Monday  13:00 – 14:00",
-    "TSTue_AM":  "Tuesday  07:00 – 08:00",
-    "TSTue_PM":  "Tuesday  13:00 – 14:00",
-    "TSWed_AM":  "Wednesday  07:00 – 08:00",
-    "TSWed_PM":  "Wednesday  13:00 – 14:00",
-    "TSThu_AM":  "Thursday  07:00 – 08:00",
-    "TSThu_PM":  "Thursday  13:00 – 14:00",
-    "TSFri_AM":  "Friday  07:00 – 08:00",
-    "TSFri_PM":  "Friday  13:00 – 14:00",
-}
+# ── timeslot labels ─────────────────────────────────────────────────────────
+DAY_NAMES = {"Mon": "Monday", "Tue": "Tuesday", "Wed": "Wednesday",
+             "Thu": "Thursday", "Fri": "Friday", "Sat": "Saturday", "Sun": "Sunday"}
+DAY_ORDER = list(DAY_NAMES.values())
+_TS_HOUR_RE   = re.compile(r"^TS(Mon|Tue|Wed|Thu|Fri|Sat|Sun)_(\d{2})(\d{2})$")
+_TS_LEGACY_RE = re.compile(r"^TS(Mon|Tue|Wed|Thu|Fri|Sat|Sun)_(AM|PM)$")
 
-def friendly_timeslot(ts):
-    return TIMESLOT_LABELS.get(ts, ts)
+
+def friendly_timeslot(ts, fallback=None):
+    """'TSMon_0700' -> 'Monday  07:00 – 08:00' (1-hour slots).
+    Legacy dummy codes 'TSMon_AM' / 'TSMon_PM' map to 07:00 / 13:00.
+    Unknown codes fall back to the display_time column, then the raw code."""
+    ts = str(ts)
+    m = _TS_HOUR_RE.match(ts)
+    if m:
+        day, hh, mm = m.groups()
+        h = int(hh)
+        return f"{DAY_NAMES[day]}  {h:02d}:{mm} – {h + 1:02d}:{mm}"
+    m = _TS_LEGACY_RE.match(ts)
+    if m:
+        day, half = m.groups()
+        h = 7 if half == "AM" else 13
+        return f"{DAY_NAMES[day]}  {h:02d}:00 – {h + 1:02d}:00"
+    return fallback if fallback else ts
+
+
+REQUIRED_CSVS = ["students.csv", "courses.csv", "rooms.csv",
+                 "instructors.csv", "timeslots.csv"]
+
+
+def default_data_dir():
+    """Use real_dataset if it holds all 5 CSVs, otherwise the bundled dummy set."""
+    real = os.path.join(_BASE, "real_dataset")
+    if all(os.path.isfile(os.path.join(real, f)) for f in REQUIRED_CSVS):
+        return real
+    return os.path.join(_BASE, "dummy_dataset")
 
 # ── colour palette ───────────────────────────────────────────────────────────
 BG          = "#0f1117"
@@ -177,11 +125,12 @@ class SchedulerApp(tk.Tk):
         self.minsize(900, 600)
         self.configure(bg=BG)
 
-        self._data_dir = tk.StringVar(value=os.path.join(_BASE, "real_dataset"))
+        self._data_dir = tk.StringVar(value=default_data_dir())
         self._ga_pop    = tk.IntVar(value=10)
         self._ga_gen    = tk.IntVar(value=5)
         self._ga_mut    = tk.DoubleVar(value=0.10)
         self._alns_iter = tk.IntVar(value=20)
+        self._seed      = tk.StringVar(value="")   # blank = random run
 
         self._dataset   = None
         self._output    = None
@@ -272,6 +221,18 @@ class SchedulerApp(tk.Tk):
         make_label(sec3, "ALNS", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0, 10))
         self._param_row(sec3, "Iterations", self._alns_iter, 1, 500)
 
+        # Reproducibility
+        sec4 = card_frame(p)
+        sec4.pack(fill="x", padx=30, pady=6)
+        make_label(sec4, "Reproducibility", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0, 10))
+        row4 = tk.Frame(sec4, bg=CARD)
+        row4.pack(fill="x", pady=3)
+        make_label(row4, "Random Seed", bg=CARD, fg=SUBTEXT, width=18, anchor="w").pack(side="left")
+        tk.Entry(row4, textvariable=self._seed, width=10, bg=PANEL, fg=TEXT,
+                 insertbackground=TEXT, relief="flat", font=FONT_BODY).pack(side="left", padx=8, ipady=4)
+        make_label(row4, "Blank = random. Same seed + same data = same schedule.",
+                   bg=CARD, fg=SUBTEXT, font=FONT_SMALL).pack(side="left")
+
     def _param_row(self, parent, label, var, lo, hi, is_float=False):
         row = tk.Frame(parent, bg=CARD)
         row.pack(fill="x", pady=3)
@@ -348,63 +309,108 @@ class SchedulerApp(tk.Tk):
         self._log.configure(state="disabled")
         self._status_var.set("Ready")
 
+    def _ui_log(self, text, tag=""):
+        """Thread-safe log: Tk widgets must only be touched from the main thread."""
+        self.after(0, self._log_write, text, tag)
+
+    def _ui_status(self, text):
+        self.after(0, self._status_var.set, text)
+
+    def _read_params(self):
+        """Read and validate settings on the main thread. Returns dict or None."""
+        try:
+            params = {
+                "data_dir": self._data_dir.get(),
+                "pop":  int(self._ga_pop.get()),
+                "gen":  int(self._ga_gen.get()),
+                "mut":  float(self._ga_mut.get()),
+                "iter": int(self._alns_iter.get()),
+            }
+        except (tk.TclError, ValueError):
+            messagebox.showerror("Invalid setting", "Check the Configuration tab: every field needs a number.")
+            return None
+
+        seed_txt = self._seed.get().strip()
+        if seed_txt and not seed_txt.lstrip("-").isdigit():
+            messagebox.showerror("Invalid seed", "Random Seed must be a whole number or left blank.")
+            return None
+        params["seed"] = int(seed_txt) if seed_txt else None
+
+        if params["pop"] < 2 or params["gen"] < 1 or params["iter"] < 0 or not 0 <= params["mut"] <= 1:
+            messagebox.showerror("Invalid setting",
+                                 "Population must be at least 2, generations at least 1, "
+                                 "mutation rate between 0 and 1.")
+            return None
+
+        missing = [f for f in REQUIRED_CSVS
+                   if not os.path.isfile(os.path.join(params["data_dir"], f))]
+        if missing:
+            messagebox.showerror("Dataset not found",
+                                 f"Missing in:\n{params['data_dir']}\n\n" + "\n".join(missing))
+            return None
+        return params
+
     def _start_run(self):
+        params = self._read_params()
+        if params is None:
+            return
         self._run_btn.config(state="disabled")
         self._clear_log()
         self._progress.start(12)
         self._status_var.set("Running…")
-        t = threading.Thread(target=self._run_pipeline, daemon=True)
+        t = threading.Thread(target=self._run_pipeline, args=(params,), daemon=True)
         t.start()
 
-    def _run_pipeline(self):
+    def _run_pipeline(self, params):
+        log = self._ui_log
         try:
             from hybrid_scheduler.utils.dataset_loader import load_dataset
             from hybrid_scheduler.fgasp.pipeline import HybridSchedulingPipeline
 
-            data_dir = self._data_dir.get()
+            data_dir = params["data_dir"]
 
-            self._log_write("═" * 56 + "\n", "hdr")
-            self._log_write(" HYBRID SCHEDULER — FGASP PIPELINE\n", "hdr")
-            self._log_write("═" * 56 + "\n\n", "hdr")
+            log("═" * 56 + "\n", "hdr")
+            log(" HYBRID SCHEDULER — FGASP PIPELINE\n", "hdr")
+            log("═" * 56 + "\n\n", "hdr")
 
-            self._log_write("[1/5] Loading dataset…\n", "sub")
-            self.after(0, lambda: self._status_var.set("Loading dataset…"))
+            log("[1/5] Loading dataset…\n", "sub")
+            self._ui_status("Loading dataset…")
 
-            ds = load_dataset(
-                os.path.join(data_dir, "students.csv"),
-                os.path.join(data_dir, "courses.csv"),
-                os.path.join(data_dir, "rooms.csv"),
-                os.path.join(data_dir, "instructors.csv"),
-                os.path.join(data_dir, "timeslots.csv"),
-            )
+            ds = load_dataset(*[os.path.join(data_dir, f) for f in REQUIRED_CSVS])
             self._dataset = ds
 
-            self._log_write(f"      Students   : {len(ds.students)}\n")
-            self._log_write(f"      Courses    : {len(ds.courses)}\n")
-            self._log_write(f"      Timeslots  : {len(ds.timeslots)}\n")
-            self._log_write(f"      Instructors: {len(ds.instructors)}\n")
-            self._log_write(f"      Rooms      : {len(ds.rooms)}\n\n", "ok")
+            log(f"      Folder     : {data_dir}\n", "sub")
+            log(f"      Students   : {len(ds.students)}\n")
+            log(f"      Courses    : {len(ds.courses)}\n")
+            log(f"      Timeslots  : {len(ds.timeslots)}\n")
+            log(f"      Instructors: {len(ds.instructors)}\n")
+            log(f"      Rooms      : {len(ds.rooms)}\n\n", "ok")
 
-            self._log_write("[2/5] Building pipeline…\n", "sub")
-            self.after(0, lambda: self._status_var.set("Building pipeline…"))
+            if len(ds.courses) > len(ds.timeslots):
+                log(f"      ⚠ {len(ds.courses)} courses but only {len(ds.timeslots)} timeslots: "
+                    f"every student is given every course, so at least "
+                    f"{len(ds.students) * (len(ds.courses) - len(ds.timeslots)):,} "
+                    f"student conflicts are unavoidable.\n\n", "warn")
 
-            def _gui_log(msg):
-                self.after(0, lambda m=msg: self._log_write(m))
+            log("[2/5] Building pipeline…\n", "sub")
+            self._ui_status("Building pipeline…")
 
             pipeline = HybridSchedulingPipeline(
                 ds,
-                ga_population_size=self._ga_pop.get(),
-                ga_generations=self._ga_gen.get(),
-                ga_mutation_rate=self._ga_mut.get(),
-                alns_iterations=self._alns_iter.get(),
-                log_callback=_gui_log,
+                ga_population_size=params["pop"],
+                ga_generations=params["gen"],
+                ga_mutation_rate=params["mut"],
+                alns_iterations=params["iter"],
+                log_callback=log,
+                seed=params["seed"],
             )
 
-            self._log_write(f"      GA  — pop={self._ga_pop.get()}  gen={self._ga_gen.get()}  mut={self._ga_mut.get():.2f}\n")
-            self._log_write(f"      ALNS — iter={self._alns_iter.get()}\n\n")
+            log(f"      GA  — pop={params['pop']}  gen={params['gen']}  mut={params['mut']:.2f}\n")
+            log(f"      ALNS — iter={params['iter']}\n")
+            log(f"      Seed - {params['seed'] if params['seed'] is not None else 'random'}\n\n")
 
-            self._log_write("[3/5] Running GA + ALNS + FGASP…\n", "sub")
-            self.after(0, lambda: self._status_var.set("Running optimisation…"))
+            log("[3/5] Running GA + ALNS + FGASP…\n", "sub")
+            self._ui_status("Running optimisation…")
 
             t0 = time.time()
             output = pipeline.run()
@@ -418,37 +424,48 @@ class SchedulerApp(tk.Tk):
             decision = output["decision"]["chosen"]
             best_sch = output["best_solution"]
 
-            self._log_write(f"\n[4/5] Optimisation complete in {elapsed:.3f}s\n\n", "ok")
+            log(f"\n[4/5] Optimisation complete in {elapsed:.3f}s\n\n", "ok")
 
-            self._log_write("─" * 40 + "\n", "sub")
-            self._log_write(" RESULTS\n", "hdr")
-            self._log_write("─" * 40 + "\n", "sub")
-            self._log_write(f"  GA result   : {ga_res}\n")
-            self._log_write(f"  ALNS result : {alns_res}\n")
-            self._log_write(f"  FGASP chose : {decision}\n", "warn")
-            self._log_write(f"  Best result : {best_res}\n\n", "ok")
+            feasible = best_res.get("hard", 0) == 0
+            log("─" * 40 + "\n", "sub")
+            log(" RESULTS\n", "hdr")
+            log("─" * 40 + "\n", "sub")
+            log(f"  GA result   : {ga_res}\n")
+            log(f"  ALNS result : {alns_res}\n")
+            log(f"  FGASP chose : {decision}\n", "warn")
+            log(f"  Best result : {best_res}\n")
+            log(f"  Feasible    : {'YES (0 hard violations)' if feasible else 'NO (' + format(best_res.get('hard', 0), ',') + ' hard violations)'}\n\n",
+                "ok" if feasible else "err")
 
             # Build schedule dataframe
             rows = []
             for (s, c, t), v in best_sch.items():
                 if v == 1:
                     rows.append({"student_id": s, "course_id": c, "timeslot": t})
-            df = pd.DataFrame(rows)
-            df["time_label"] = df["timeslot"].map(lambda x: friendly_timeslot(x))
+            df = pd.DataFrame(rows, columns=["student_id", "course_id", "timeslot"])
+
+            # labels: parse TS codes, else use display_time from timeslots.csv
+            ts_df = ds.timeslots
+            display = (dict(zip(ts_df["timeslot"], ts_df["display_time"]))
+                       if "display_time" in ts_df.columns else {})
+            df["time_label"] = df["timeslot"].map(lambda x: friendly_timeslot(x, display.get(x)))
+            # chronological order = row order in timeslots.csv
+            order = {t: i for i, t in enumerate(ts_df["timeslot"])}
+            df["slot_order"] = df["timeslot"].map(order).fillna(len(order)).astype(int)
             self._schedule_df = df
 
-            self._log_write("[5/5] Building schedule view…\n", "sub")
+            log("[5/5] Building schedule view…\n", "sub")
             self.after(0, self._populate_schedule)
             self.after(0, self._populate_stats)
 
-            self._log_write("\n✔  Done.\n", "ok")
-            self.after(0, lambda: self._status_var.set(f"Done — {elapsed:.2f}s"))
+            log("\n✔  Done.\n", "ok")
+            self._ui_status(f"Done — {elapsed:.2f}s")
 
         except Exception as ex:
             import traceback
-            self._log_write(f"\n[ERROR] {ex}\n", "err")
-            self._log_write(traceback.format_exc(), "err")
-            self.after(0, lambda: self._status_var.set("Error — see log"))
+            log(f"\n[ERROR] {ex}\n", "err")
+            log(traceback.format_exc(), "err")
+            self._ui_status("Error — see log")
         finally:
             self.after(0, self._progress.stop)
             self.after(0, lambda: self._run_btn.config(state="normal"))
@@ -481,8 +498,7 @@ class SchedulerApp(tk.Tk):
         make_label(row, "Day:", bg=CARD, fg=SUBTEXT).pack(side="left")
         self._filter_day = tk.StringVar(value="All")
         self._combo_day  = ttk.Combobox(row, textvariable=self._filter_day,
-                                        values=["All", "Monday", "Tuesday", "Wednesday",
-                                                "Thursday", "Friday"],
+                                        values=["All"] + DAY_ORDER[:6],
                                         width=12, state="readonly")
         self._combo_day.pack(side="left", padx=(4, 16))
 
@@ -529,6 +545,8 @@ class SchedulerApp(tk.Tk):
         courses  = ["All"] + sorted(df["course_id"].unique())
         self._combo_student.config(values=students)
         self._combo_course.config(values=courses)
+        days_present = {str(lbl).split()[0] for lbl in df["time_label"] if str(lbl).split()}
+        self._combo_day.config(values=["All"] + [d for d in DAY_ORDER if d in days_present])
         self._filter_student.set("All")
         self._filter_course.set("All")
         self._filter_day.set("All")
@@ -551,7 +569,7 @@ class SchedulerApp(tk.Tk):
         for row in self._tree.get_children():
             self._tree.delete(row)
 
-        df_sorted = df.sort_values(["student_id", "timeslot"])
+        df_sorted = df.sort_values(["student_id", "slot_order"])
         for i, (_, r) in enumerate(df_sorted.iterrows()):
             label  = r["time_label"]
             parts  = label.split()
@@ -603,7 +621,8 @@ class SchedulerApp(tk.Tk):
 
         df["day"]  = df["time_label"].apply(lambda x: split_label(x)[0])
         df["time"] = df["time_label"].apply(lambda x: split_label(x)[1])
-        df_sorted  = df.sort_values(["student_id", "day", "time"]).reset_index(drop=True)
+        # chronological (Mon→Sat), not alphabetical (Friday first)
+        df_sorted  = df.sort_values(["student_id", "slot_order", "course_id"]).reset_index(drop=True)
 
         # ── colour palette ────────────────────────────────────────────────────
         C_HEADER_BG  = "1E3A5F"   # dark navy
@@ -756,10 +775,11 @@ class SchedulerApp(tk.Tk):
             cell.border     = border_header
         ws2.row_dimensions[2].height = 28
 
-        # build lookup: (section, day, time) -> course
-        lookup = defaultdict(str)
+        # build lookup: (section, day, time) -> [courses]
+        # a list, so a clash shows as "A / B" instead of silently keeping one
+        lookup = defaultdict(list)
         for _, row in df_sorted.iterrows():
-            lookup[(row["student_id"], row["day"], row["time"])] = row["course_id"]
+            lookup[(row["student_id"], row["day"], row["time"])].append(row["course_id"])
 
         current_day = None
         for ri, (day, time) in enumerate(timeslot_pairs):
@@ -784,11 +804,12 @@ class SchedulerApp(tk.Tk):
             t_cell.border    = border_thin
 
             for ci, sec in enumerate(all_sections, 3):
-                course = lookup.get((sec, day, time), "")
-                cell            = ws2.cell(row=excel_row, column=ci, value=course)
-                cell.font       = hfont(sz=8, bold=bool(course))
-                cell.fill       = hfill("E8F8F5") if course else fill
-                cell.alignment  = center()
+                courses = lookup.get((sec, day, time), [])
+                clash   = len(courses) > 1
+                cell            = ws2.cell(row=excel_row, column=ci, value=" / ".join(courses))
+                cell.font       = hfont(sz=8, bold=bool(courses), color="9C0006" if clash else "000000")
+                cell.fill       = hfill("FFC7CE") if clash else (hfill("E8F8F5") if courses else fill)
+                cell.alignment  = center(wrap=clash)
                 cell.border     = border_thin
             ws2.row_dimensions[excel_row].height = 16
 
@@ -828,6 +849,8 @@ class SchedulerApp(tk.Tk):
         stat_row(ws3, 6,  "Days Covered",          df_sorted["day"].nunique())
         stat_row(ws3, 7,  "Avg Courses/Section",
                  f'{len(df_sorted)/max(df_sorted["student_id"].nunique(),1):.1f}', True)
+        stat_row(ws3, 8,  "Timetable Clashes (red cells)",
+                 sum(1 for cs in lookup.values() if len(cs) > 1))
 
         ws3.column_dimensions["A"].width = 28
         ws3.column_dimensions["B"].width = 20
@@ -872,12 +895,17 @@ class SchedulerApp(tk.Tk):
         self._stats_frame = tk.Frame(canvas, bg=BG)
         self._stats_frame.bind("<Configure>",
             lambda e: canvas.configure(scrollregion=canvas.bbox("all")))
-        canvas.create_window((0, 0), window=self._stats_frame, anchor="nw")
+        win = canvas.create_window((0, 0), window=self._stats_frame, anchor="nw")
+        # stretch content to the visible width instead of overflowing it
+        canvas.bind("<Configure>", lambda e: canvas.itemconfigure(win, width=e.width))
         canvas.configure(yscrollcommand=sb.set)
         canvas.pack(side="left", fill="both", expand=True)
         sb.pack(side="right", fill="y")
-        canvas.bind_all("<MouseWheel>",
-            lambda e: canvas.yview_scroll(-1*(e.delta//120), "units"))
+        # only scroll this canvas while the mouse is over it
+        # (bind_all made the wheel scroll Stats even from the Schedule/Run tabs)
+        _wheel = lambda e: canvas.yview_scroll(-1*(e.delta//120), "units")
+        canvas.bind("<Enter>", lambda e: canvas.bind_all("<MouseWheel>", _wheel))
+        canvas.bind("<Leave>", lambda e: canvas.unbind_all("<MouseWheel>"))
 
         make_label(self._stats_frame,
                    "Run the scheduler to see results.",
@@ -909,9 +937,9 @@ class SchedulerApp(tk.Tk):
         tree.pack(fill="x")
         return tree
 
-    def _horiz_bar(self, parent, label, value, max_val, color, unit=""):
+    def _horiz_bar(self, parent, label, value, max_val, color, unit="", bar_w=420):
         """Single horizontal bar row."""
-        BAR_W = 420
+        BAR_W = bar_w
         f = tk.Frame(parent, bg=CARD)
         f.pack(fill="x", padx=8, pady=3)
         tk.Label(f, text=label, font=FONT_SMALL, fg=SUBTEXT, bg=CARD,
@@ -941,6 +969,15 @@ class SchedulerApp(tk.Tk):
         def v(key, default=0):
             return val_result.get(key, default)
 
+        feasible = v("hard") == 0
+
+        make_label(self._stats_frame,
+                   "Rows marked (reported) are fixed values from the thesis experiments. "
+                   "Only (this run) values are computed from the dataset you just ran, "
+                   "so compare them only when the same dataset is loaded.",
+                   fg=WARNING, bg=BG, font=FONT_SMALL, wraplength=900,
+                   justify="left").pack(anchor="w", padx=30, pady=(10, 0))
+
         # ══════════════════════════════════════════════════════════════════════
         # Feasibility Performance
         # ══════════════════════════════════════════════════════════════════════
@@ -948,16 +985,20 @@ class SchedulerApp(tk.Tk):
 
         self._result_table(
             self._stats_frame,
-            headers=["Method", "Feasibility", "Avg. Hard Violations", "Avg. Time (s)"],
+            headers=["Method", "Feasible (0 hard)", "Hard Violations", "Time (s)"],
             rows=[
-                ("CSP-only (Baseline)",  "Baseline", "4,179.4 ± 30.6",   "< 0.01"),
-                ("GA-only",              "Baseline", "4,017.6 ± 19.9",   "0.73 ± 0.04"),
-                ("ALNS-only",            "Baseline", "2,578.2 ± 575.3",  "0.30 ± 0.02"),
-                (f"FGASP — {decision} ✔","100%",
-                 f"{v('hard'):,}  (this run)",
-                 f"{out.get('execution_time', 0):.2f}s  (this run)"),
+                ("CSP-only (reported)",  "No", "4,179.4 ± 30.6",   "< 0.01"),
+                ("GA-only (reported)",   "No", "4,017.6 ± 19.9",   "0.73 ± 0.04"),
+                ("ALNS-only (reported)", "No", "2,578.2 ± 575.3",  "0.30 ± 0.02"),
+                ("GA stage (this run)",
+                 "Yes" if ga_result.get("hard", 0) == 0 else "No",
+                 f"{ga_result.get('hard', 0):,}", "n/a"),
+                (f"FGASP ({decision}, this run)",
+                 "Yes" if feasible else "No",
+                 f"{v('hard'):,}",
+                 f"{out.get('execution_time', 0):.2f}"),
             ],
-            col_widths=[220, 100, 220, 180],
+            col_widths=[240, 130, 200, 160],
         )
 
         # live metric cards
@@ -967,14 +1008,15 @@ class SchedulerApp(tk.Tk):
             ("Courses",            df["course_id"].nunique(),         WARNING),
             ("Hard Violations",    v("hard"),                         RED),
             ("Total Score",        v("score"),                        ACCENT2),
+            ("Feasible",           "Yes" if feasible else "No",       SUCCESS if feasible else RED),
         ]
         crow = tk.Frame(self._stats_frame, bg=BG)
         crow.pack(fill="x", padx=30, pady=8)
         for lbl, val, col in cards_data:
             c = card_frame(crow, padx=14, pady=10)
             c.pack(side="left", fill="both", expand=True, padx=4)
-            tk.Label(c, text=f"{val:,}", font=("Segoe UI", 20, "bold"),
-                     fg=col, bg=CARD).pack()
+            tk.Label(c, text=f"{val:,}" if isinstance(val, int) else str(val),
+                     font=("Segoe UI", 20, "bold"), fg=col, bg=CARD).pack()
             make_label(c, lbl, fg=SUBTEXT, bg=CARD, font=FONT_SMALL).pack()
 
         # ══════════════════════════════════════════════════════════════════════
@@ -986,25 +1028,25 @@ class SchedulerApp(tk.Tk):
             self._stats_frame,
             headers=["Method", "Avg. Total Score", "Std. Deviation", "Reduction vs. Baseline"],
             rows=[
-                ("CSP-only (Baseline)", "46,761.4", "231.0",   "—"),
-                ("GA-only",             "45,372.8", "165.9",   "2.97%"),
-                ("ALNS-only",           "33,596.2", "4,708.4", "28.12%"),
-                (f"FGASP ({decision})", f"{v('score'):,}  (this run)",
-                 "5,163.4 (avg)",       "33.89% (avg)"),
+                ("CSP-only (reported)",  "46,761.4", "231.0",   "—"),
+                ("GA-only (reported)",   "45,372.8", "165.9",   "2.97%"),
+                ("ALNS-only (reported)", "33,596.2", "4,708.4", "28.12%"),
+                ("FGASP (reported)",     "n/a",      "5,163.4", "33.89%"),
+                (f"FGASP ({decision}, this run)", f"{v('score'):,}", "n/a", "n/a"),
             ],
-            col_widths=[200, 210, 180, 210],
+            col_widths=[240, 200, 160, 200],
         )
 
         # bar chart: score comparison
         score_card = card_frame(self._stats_frame, padx=16, pady=12)
         score_card.pack(fill="x", padx=30, pady=4)
         make_label(score_card, "Total Score Comparison (Fig. 6)", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0,8))
-        max_s = 50000
+        max_s = max(50000, v("score"))
         for label, score, col in [
-            ("CSP-only",          46761, SUBTEXT),
-            ("GA-only",           45373, WARNING),
-            ("ALNS-only",         33596, ACCENT2),
-            (f"FGASP ({decision})", v("score"), SUCCESS),
+            ("CSP-only (reported)",  46761, SUBTEXT),
+            ("GA-only (reported)",   45373, WARNING),
+            ("ALNS-only (reported)", 33596, ACCENT2),
+            (f"FGASP ({decision}, this run)", v("score"), SUCCESS),
         ]:
             self._horiz_bar(score_card, label, score, max_s, col)
 
@@ -1017,11 +1059,11 @@ class SchedulerApp(tk.Tk):
             self._stats_frame,
             headers=["Method", "Avg. Execution Time (seconds)"],
             rows=[
-                ("CSP-only (Baseline)", "< 0.01"),
-                ("GA-only",             "0.73 ± 0.04"),
-                ("ALNS-only",           "0.30 ± 0.02"),
-                (f"FGASP ({decision})",
-                 f"{out.get('execution_time', 0):.3f}s  (this run) | avg 1.02 ± 0.05"),
+                ("CSP-only (reported)",  "< 0.01"),
+                ("GA-only (reported)",   "0.73 ± 0.04"),
+                ("ALNS-only (reported)", "0.30 ± 0.02"),
+                ("FGASP (reported)",     "1.02 ± 0.05"),
+                (f"FGASP ({decision}, this run)", f"{out.get('execution_time', 0):.3f}"),
             ],
             col_widths=[300, 500],
         )
@@ -1046,9 +1088,10 @@ class SchedulerApp(tk.Tk):
             ("Room Capacity Violations",     v("room_capacity"),      SUCCESS),
             ("Prerequisite Violations",      v("prerequisite"),       SUCCESS),
         ]
+        # narrower bars here: two cards side by side must fit the 1200px window
         max_hard = max((x[1] for x in hard_items), default=1) or 1
         for lbl, val, col in hard_items:
-            self._horiz_bar(hc, lbl, val, max_hard, col)
+            self._horiz_bar(hc, lbl, val, max_hard, col, bar_w=200)
 
         # Right: soft constraints
         sc = card_frame(breakdown_row, padx=16, pady=12)
@@ -1062,7 +1105,7 @@ class SchedulerApp(tk.Tk):
         ]
         max_soft = max((x[1] for x in soft_items), default=1) or 1
         for lbl, val, col in soft_items:
-            self._horiz_bar(sc, lbl, val, max_soft, col)
+            self._horiz_bar(sc, lbl, val, max_soft, col, bar_w=200)
 
         # Summary totals row
         totals_card = card_frame(self._stats_frame, padx=16, pady=10)
@@ -1090,12 +1133,12 @@ class SchedulerApp(tk.Tk):
         hbar_card = card_frame(self._stats_frame, padx=16, pady=12)
         hbar_card.pack(fill="x", padx=30, pady=4)
         make_label(hbar_card, "Avg. Hard Violations per Method", font=FONT_H2, bg=CARD).pack(anchor="w", pady=(0,8))
-        max_h = 4500
+        max_h = max(4500, v("hard"))
         for label, hard, col in [
-            ("CSP-only",           4179, SUBTEXT),
-            ("GA-only",            4018, WARNING),
-            ("ALNS-only",          2578, ACCENT2),
-            (f"FGASP ({decision})", v("hard"), SUCCESS),
+            ("CSP-only (reported)",  4179, SUBTEXT),
+            ("GA-only (reported)",   4018, WARNING),
+            ("ALNS-only (reported)", 2578, ACCENT2),
+            (f"FGASP ({decision}, this run)", v("hard"), SUCCESS if feasible else RED),
         ]:
             self._horiz_bar(hbar_card, label, hard, max_h, col)
 
