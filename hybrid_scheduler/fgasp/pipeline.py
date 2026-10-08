@@ -1,3 +1,5 @@
+import random
+
 from hybrid_scheduler.core.validator import Validator
 from hybrid_scheduler.metaheuristics.ga import GeneticAlgorithm
 from hybrid_scheduler.metaheuristics.neighborhood_ops import NeighborhoodOperators
@@ -13,13 +15,15 @@ class HybridSchedulingPipeline:
     """
 
     def __init__(self, dataset, ga_population_size=10, ga_generations=5,
-                 ga_mutation_rate=0.10, alns_iterations=20, log_callback=None):
+                 ga_mutation_rate=0.10, alns_iterations=20, log_callback=None,
+                 seed=None):
         self.dataset            = dataset
         self.ga_population_size = ga_population_size
         self.ga_generations     = ga_generations
         self.ga_mutation_rate   = ga_mutation_rate
         self.alns_iterations    = alns_iterations
         self.log                = log_callback or print
+        self.seed               = seed  # int = reproducible run, None = random
 
     def build(self):
         validator = Validator(self.dataset)
@@ -51,6 +55,8 @@ class HybridSchedulingPipeline:
         }
 
     def run(self):
+        if self.seed is not None:
+            random.seed(self.seed)
         components = self.build()
         output = components["controller"].run()
         output["csp_model"] = components["csp_model"]

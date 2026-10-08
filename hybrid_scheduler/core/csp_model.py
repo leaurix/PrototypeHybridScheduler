@@ -58,6 +58,10 @@ class CSPModel:
                 except (ValueError, SyntaxError):
                     available_slots = []
 
+            # empty list = no restriction (same rule as Validator)
+            if not available_slots:
+                continue
+
             for t in self.dataset.timeslots["timeslot"]:
                 if t not in available_slots:
                     for s in self.dataset.students["student_id"]:

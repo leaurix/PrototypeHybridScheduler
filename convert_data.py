@@ -310,14 +310,27 @@ def convert_classes(path, inst_name_to_id):
 
     # match courses to instructor IDs
     course_rows = []
+    unmatched   = []
+    # longest names first, so "DELA CRUZ" wins over "CRUZ"
+    name_keys = sorted((k for k in inst_name_to_id if k), key=len, reverse=True)
     for cid, inst_name in course_instructor.items():
-        iid = "I001"  # fallback
+        iid = None
         inst_upper = inst_name.upper()
-        for key, vid in inst_name_to_id.items():
-            if key and key in inst_upper:
-                iid = vid
+        for key in name_keys:
+            # whole-word match: "LIM" must not match "ALIMAN"
+            if re.search(r"(?<![A-Z0-9])" + re.escape(key) + r"(?![A-Z0-9])", inst_upper):
+                iid = inst_name_to_id[key]
                 break
+        if iid is None:
+            iid = "I001"  # fallback
+            unmatched.append((cid, inst_name or "(blank)"))
         course_rows.append({"course_id": cid, "instructor_id": iid, "prerequisite": ""})
+
+    if unmatched:
+        print(f"    [WARN] {len(unmatched)} course(s) had no matching instructor and were "
+              f"assigned to I001. Fix these in courses.csv:")
+        for cid, name in unmatched:
+            print(f"           {cid:<15} instructor text: {name}")
 
     # save courses.csv
     df_courses = pd.DataFrame(course_rows)

@@ -1,0 +1,17 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# PyInstaller output
+build/
+dist/
+
+# Local data (keep folders, not the school's files)
+input_excel/*.xlsx
+real_dataset/*.csv
+
+# Exports
+output_schedule*.xlsx
+output_schedule*.csv
